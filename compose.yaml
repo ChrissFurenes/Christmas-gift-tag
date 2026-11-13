@@ -1,0 +1,15 @@
+services:
+  christmas-gift-tag:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      BASE_URL: ${BASE_URL:-http://localhost:8080}
+      DATABASE_PATH: /data/gifts.db
+      TIMEZONE: Europe/Oslo
+    volumes:
+      - gift-data:/data
+volumes:
+  gift-data:
