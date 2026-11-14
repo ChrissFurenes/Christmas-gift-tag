@@ -1,0 +1,25 @@
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Brukeradministrasjon</title><link rel="stylesheet" href="/static/style.css"><script defer src="/static/app.js"></script></head>
+<body><main><header><div><h1>👥 Brukeradministrasjon</h1><p class="muted">Administrator: {{.User.Username}}</p></div><a class="button-link secondary" href="/admin">Mine etiketter</a></header>
+{{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+<section><h2>Opprett lokal bruker</h2><p class="help">Brukeren lager og administrerer sine egne etiketter. Administrator kan ikke lese dem.</p>
+<form method="post" action="/admin/users" class="create"><input type="hidden" name="csrf" value="{{.CSRF}}"><label>Brukernavn<input name="username" minlength="3" maxlength="40" pattern="[A-Za-z0-9_.-]+" required></label><label>Visningsnavn <span class="optional">(valgfritt, brukes som avsender)</span><input name="display_name" maxlength="120" placeholder="Standard: brukernavn"></label><label>Startpassord <span class="optional">(minst 12 tegn)</span><span class="password-row"><input name="password" data-password-field type="password" minlength="12" maxlength="256" autocomplete="new-password" required><button type="button" class="secondary eye" data-toggle-password aria-label="Vis eller skjul passord">👁</button></span></label><button>Opprett bruker</button></form>
+</section>
+<section><h2>Innloggingstjenester</h2><p class="help">Aktiver tjenestene her. Konfigurer klient-ID, hemmeligheter og katalogtilkobling som miljøvariabler i Docker først. Nye brukere opprettes automatisk ved første vellykkede eksterne innlogging.</p>
+<form method="post" action="/admin/settings" class="stack"><input type="hidden" name="csrf" value="{{.CSRF}}">
+<label class="checkbox-label"><input type="checkbox" name="local_signup_enabled" value="on" {{if .LocalSignupEnabled}}checked{{end}} {{if .LocalSignupEnvManaged}}disabled{{end}}> Tillat egenregistrering med lokalt brukernavn og passord</label>
+{{if .LocalSignupEnvManaged}}<p class="help">Denne innstillingen styres av <code>LOCAL_SIGNUP_ENABLED</code> i .env. Endre verdien og start containeren på nytt for å bytte.</p>{{else}}<p class="help">Du kan også overstyre av/på via <code>LOCAL_SIGNUP_ENABLED=true/false</code> i .env.</p>{{end}}
+<label class="checkbox-label"><input type="checkbox" name="github_enabled" value="on" {{if .GitHubEnabled}}checked{{end}} {{if not .GitHubConfigured}}disabled{{end}}> GitHub OAuth {{if not .GitHubConfigured}}<span class="muted">– mangler GITHUB_CLIENT_ID/SECRET</span>{{end}}</label>
+<label class="checkbox-label"><input type="checkbox" name="oidc_enabled" value="on" {{if .OIDCEnabled}}checked{{end}} {{if not .OIDCConfigured}}disabled{{end}}> OpenID Connect (f.eks. Google, Microsoft Entra ID, Authentik, Keycloak) {{if not .OIDCConfigured}}<span class="muted">– ikke konfigurert</span>{{end}}</label>
+<label class="checkbox-label"><input type="checkbox" name="ldap_enabled" value="on" {{if .LDAPEnabled}}checked{{end}} {{if not .LDAPConfigured}}disabled{{end}}> LDAP / Active Directory {{if not .LDAPConfigured}}<span class="muted">– ikke konfigurert</span>{{end}}</label>
+<button>Lagre innstillinger</button></form>
+</section>
+<section><h2>Brukere ({{len .Users}})</h2><p class="help">Administrator ser kun antall etiketter, ikke innholdet. Brukerkontoer kan deaktiveres uten at etikettene slettes.</p>
+<div class="users-list">{{range .Users}}
+<article class="userrow"><div><h3>{{.Username}}{{if .IsAdmin}} <span class="pill">Administrator</span>{{end}}</h3><p class="muted">{{.Provider}} · {{.LabelCount}} etiketter · {{if .Enabled}}Aktiv{{else}}Deaktivert{{end}}</p></div>
+{{if not .IsAdmin}}<div class="useractions">
+<form method="post" action="/admin/users/{{.ID}}/enabled"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="secondary">{{if .Enabled}}Deaktiver{{else}}Aktiver{{end}}</button></form>
+<a class="button-link danger" href="/admin/users/{{.ID}}/delete">Slett bruker</a>
+</div>{{end}}</article>
+{{end}}</div>
+</section>
+</main></body></html>

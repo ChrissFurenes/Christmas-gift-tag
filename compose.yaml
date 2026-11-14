@@ -6,9 +6,22 @@ services:
       - "8080:8080"
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      TICKET_SECRET: ${TICKET_SECRET:-}
+      GIFT_PASSWORD_KEY: ${GIFT_PASSWORD_KEY:-}
+      LOCAL_SIGNUP_ENABLED: ${LOCAL_SIGNUP_ENABLED:-}
       BASE_URL: ${BASE_URL:-http://localhost:8080}
       DATABASE_PATH: /data/gifts.db
       TIMEZONE: Europe/Oslo
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      LDAP_URL: ${LDAP_URL:-}
+      LDAP_BASE_DN: ${LDAP_BASE_DN:-}
+      LDAP_USER_FILTER: ${LDAP_USER_FILTER:-}
+      LDAP_BIND_DN: ${LDAP_BIND_DN:-}
+      LDAP_BIND_PASSWORD: ${LDAP_BIND_PASSWORD:-}
     volumes:
       - gift-data:/data
 volumes:

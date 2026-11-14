@@ -1,1 +1,46 @@
-<!doctype html><html lang="no"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Julegave-administrator</title><link rel="stylesheet" href="/static/style.css"><main><header><h1>🎄 Christmas Gift Tag</h1><form method="post" action="/admin/logout"><button class="secondary">Logg ut</button></form></header><section><h2>Opprett gave</h2><form method="post" action="/admin/gifts" class="create"><label>Til<input name="recipient" maxlength="120" required></label><label>Fra<input name="sender" maxlength="120" required></label><label>Åpnes tidligst<input type="datetime-local" name="opens_at" required></label><label class="wide">Hemmelig melding<textarea name="message" rows="4" maxlength="4000" required></textarea></label><button>🎁 Opprett gave</button></form></section><section><h2>Gaver ({{len .Gifts}})</h2>{{range .Gifts}}<article class="giftrow"><img src="/gift/{{.ID}}/qr.png" alt="QR-kode"><div><h3>Til {{.Recipient}} · Fra {{.Sender}}</h3><p>Åpnes: {{.OpensAt.Format "02.01.2006 15:04 MST"}} · Tidlige besøk: {{.Peeks}}</p><p><a href="/gift/{{.ID}}" target="_blank" rel="noopener">Åpne gaveside</a> · <a href="/gift/{{.ID}}/qr.png" download="gave-{{.ID}}.png">Last ned QR</a></p><p class="muted">{{$.URL}}/gift/{{.ID}}</p><div class="actions">{{if not .ForcedOpen}}<form method="post" action="/admin/gifts/{{.ID}}/open"><button>Åpne nå</button></form>{{else}}<strong>🔓 Manuelt åpnet</strong>{{end}}<form method="post" action="/admin/gifts/{{.ID}}/delete" onsubmit="return confirm('Slette denne gaven?')"><button class="danger">Slett</button></form></div></div></article>{{else}}<p>Ingen gaver ennå.</p>{{end}}</section></main></html>
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mine juleetiketter</title><link rel="stylesheet" href="/static/style.css"><script defer src="/static/app.js"></script></head>
+<body><main>
+<header><div><h1>🎄 Christmas Gift Tag</h1><p class="muted">Innlogget som <strong>{{.User.DisplayName}}</strong> ({{.User.Username}}) · Mine etiketter</p></div>
+<nav>{{if .User.IsAdmin}}<a class="button-link secondary" href="/admin/users">👥 Brukere og innlogging</a>{{end}}<form action="/logout" method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="secondary">Logg ut</button></form></nav></header>
+<section><h2>🎁 Opprett gaveetikett</h2>
+<form method="post" action="/admin/gifts" class="create" data-gift-form>
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<label>Til <input name="recipient" maxlength="120" required placeholder="Mottaker"></label>
+<label>Fra <input name="sender" maxlength="120" required value="{{.User.DisplayName}}" placeholder="Avsender"></label>
+<div class="date-input-block"><label>Åpnes tidligst <span class="optional">(valgfritt)</span><input data-date-input data-default-date="{{.DefaultGiftDate}}" type="datetime-local" name="opens_at" value="{{.DefaultGiftDate}}"></label><div class="inline-buttons"><button type="button" class="secondary" data-clear-date>✕ Fjern dato</button><button type="button" class="secondary" data-reset-date>↺ 24. desember</button></div></div>
+<label>Gavepassord <span class="optional">(valgfritt)</span><span class="password-row"><input data-password-field type="password" name="password" autocomplete="new-password" maxlength="256"><button type="button" class="secondary eye" data-toggle-password aria-label="Vis eller skjul passord">👁</button></span></label>
+<fieldset class="wide date-options" data-date-options><legend>Åpning med passord når dato er valgt</legend>
+<label class="checkbox-label"><input type="checkbox" name="allow_password_before" value="on"> Tillat gavepassord før åpningsdato (åpne tidligere)</label>
+<label class="checkbox-label"><input type="checkbox" name="require_password_after" value="on"> Krev gavepassord også etter åpningsdato</label>
+<p class="help">Begge valg er uavhengige. Før dato kan ingen se mottakeren uten korrekt passord og tillatelse. Etter dato åpnes etiketten automatisk dersom «Krev gavepassord» ikke er valgt. Passordet må være fylt ut.</p></fieldset>
+<label class="wide">Hemmelig melding <span class="optional">(valgfritt)</span><textarea name="message" rows="3" maxlength="4000"></textarea></label>
+<div class="wide note-block"><button type="button" class="secondary" data-toggle-target="new-note" aria-expanded="false">👁 Vis privat beskrivelse / notat</button>
+<div id="new-note" hidden><label>Privat beskrivelse / notat <span class="optional">(bare for deg)</span><textarea name="private_note" rows="3" maxlength="4000" placeholder="Pakke, innhold, farge, butikk ..."></textarea></label></div></div>
+<p class="help wide">Uten dato og passord må du åpne etiketten manuelt. Andre brukere og administrator kan ikke se etikettene dine.</p>
+<div class="actions wide"><button type="submit">🎁 Opprett etikett</button><button type="button" class="secondary" data-show-preview>👁 Forhåndsvisning</button></div>
+</form></section>
+<section><h2>Mine etiketter (<span data-label-count>{{len .Gifts}}</span>)</h2>
+<label class="search-box">🔎 Søk i etiketter<input type="search" data-label-search placeholder="Søk på mottaker, avsender eller privat notat" autocomplete="off"></label>
+<p class="help" data-label-no-match hidden>Ingen etiketter passer søket.</p>
+{{range .Gifts}}
+<article class="giftrow" data-label-row data-search="{{.Recipient}} {{.Sender}} {{.PrivateNote}} {{.ID}}"><img src="/gift/{{.ID}}/qr.png" alt="QR-kode for etikett"><div class="giftinfo">
+<h3>Til {{.Recipient}} · Fra {{.Sender}}</h3>
+{{if .PrivateNote}}<div class="note-block"><button type="button" class="secondary" data-toggle-target="note-{{.ID}}" aria-expanded="false">👁 Vis privat notat</button><p id="note-{{.ID}}" class="private-note" hidden>{{.PrivateNote}}</p></div>{{end}}
+<p class="muted">{{if .HasOpensAt}}Åpnes: {{.OpensAtLabel}}{{else}}Ingen åpningsdato{{end}} · {{if .HasPassword}}🔐 Gavepassord er satt{{else}}🔓 Intet gavepassord{{end}} · Besøk uten tilgang: {{.Peeks}}</p>
+{{if .HasPassword}}<div class="reveal-block"><button type="button" class="secondary" data-reveal-gift-password="{{.ID}}" aria-expanded="false">👁 Vis gavepassord</button><output class="password-secret" data-revealed-password="{{.ID}}" hidden></output></div>{{end}}
+{{if and .HasOpensAt .HasPassword}}<p class="muted">{{if .RequirePasswordAfter}}Passord etter tidspunkt: Ja{{else}}Passord etter tidspunkt: Nei{{end}} · {{if .AllowPasswordBefore}}Passord før tidspunkt: Ja{{else}}Passord før tidspunkt: Nei{{end}}</p>{{end}}
+<p><a href="/gift/{{.ID}}" target="_blank" rel="noopener">Offentlig gaveside</a> · <a href="/gift/{{.ID}}/qr.png" download="gave-{{.ID}}.png">Last ned QR-kode</a></p>
+<p class="muted">{{$.URL}}/gift/{{.ID}}</p>
+<div class="actions"><a class="button-link" href="/admin/gifts/{{.ID}}/preview" target="_blank" rel="noopener">👁 Forhåndsvisning</a><a class="button-link secondary" href="/admin/gifts/{{.ID}}/edit">✏️ Rediger</a>
+{{if .ForcedOpen}}<form method="post" action="/admin/gifts/{{.ID}}/lock"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="secondary">Fjern manuell åpning</button></form>{{else}}<form method="post" action="/admin/gifts/{{.ID}}/open"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button>Åpne manuelt</button></form>{{end}}
+<form method="post" action="/admin/gifts/{{.ID}}/delete" data-confirm="Slette denne etiketten permanent?"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="danger">Slett</button></form>
+</div></div></article>
+{{else}}<p>Du har ingen etiketter ennå.</p>{{end}}
+</section>
+<details class="account-section"><summary>👤 Endre avsendernavn</summary><section><form method="post" action="/account/name" class="stack"><input type="hidden" name="csrf" value="{{.CSRF}}"><label>Navn som brukes som standard avsender<input name="display_name" required maxlength="120" value="{{.User.DisplayName}}"></label><button>Lagre navn</button></form></section></details>
+{{if eq .User.Provider "local"}}
+<details class="account-section"><summary>🔐 Endre mitt eget innloggingspassord</summary><section><form method="post" action="/account/password" class="stack"><input type="hidden" name="csrf" value="{{.CSRF}}"><label>Nåværende passord<input type="password" name="current_password" required autocomplete="current-password"></label><label>Nytt passord (minst 12 tegn)<input type="password" name="new_password" minlength="12" required autocomplete="new-password"></label><p class="help">Etter endring blir du logget ut av alle økter.</p><button>Lagre nytt passord</button></form></section></details>
+{{end}}
+</main>
+<dialog id="gift-preview"><div class="preview-dialog"><button class="secondary close" type="button" data-close-preview>✕ Lukk</button><p class="muted">Forhåndsvisning · etter åpning</p><div class="big">🎁</div><h2>God jul, <span data-preview-recipient></span>! 🎄</h2><p class="message" data-preview-message></p><p>Fra <span data-preview-sender></span> ❤️</p><p class="help">Det private notatet vises aldri på gavesiden.</p></div></dialog>
+</body></html>

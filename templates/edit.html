@@ -1,0 +1,20 @@
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rediger juleetikett</title><link rel="stylesheet" href="/static/style.css"><script defer src="/static/app.js"></script></head>
+<body><main class="edit-main"><header><h1>✏️ Rediger etikett</h1><a href="/admin">Tilbake</a></header><section>
+<form method="post" action="/admin/gifts/{{.Gift.ID}}/edit" class="create" data-gift-form>
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<label>Til <input name="recipient" maxlength="120" required value="{{.Gift.Recipient}}"></label>
+<label>Fra <input name="sender" maxlength="120" required value="{{.Gift.Sender}}"></label>
+<div class="date-input-block"><label>Åpnes tidligst <span class="optional">(valgfritt)</span><input data-date-input data-default-date="{{.DefaultGiftDate}}" name="opens_at" type="datetime-local" value="{{.Gift.OpensAtInput}}"></label><div class="inline-buttons"><button type="button" class="secondary" data-clear-date>✕ Fjern dato</button><button type="button" class="secondary" data-reset-date>↺ 24. desember</button></div></div>
+<label>Nytt gavepassord <span class="optional">(tomt = behold eksisterende)</span><span class="password-row"><input data-password-field name="password" type="password" maxlength="256" autocomplete="new-password"><button type="button" class="secondary eye" data-toggle-password aria-label="Vis eller skjul passord">👁</button></span></label>
+{{if .Gift.HasPassword}}<div class="reveal-block wide"><strong>🔐 Gavepassord er satt</strong><button type="button" class="secondary" data-reveal-gift-password="{{.Gift.ID}}" aria-expanded="false">👁 Vis gavepassord</button><output class="password-secret" data-revealed-password="{{.Gift.ID}}" hidden></output></div>{{else}}<p class="muted wide">🔓 Ingen gavepassord er satt.</p>{{end}}
+<label class="wide checkbox-label"><input type="checkbox" name="remove_password" value="on"> Fjern eksisterende passord</label>
+<fieldset class="wide date-options" data-date-options {{if not .Gift.HasOpensAt}}hidden{{end}}><legend>Åpning med passord når dato er valgt</legend>
+<label class="checkbox-label"><input type="checkbox" name="allow_password_before" value="on" {{if .Gift.AllowPasswordBefore}}checked{{end}}> Tillat gavepassord før åpningsdato (åpne tidligere)</label>
+<label class="checkbox-label"><input type="checkbox" name="require_password_after" value="on" {{if .Gift.RequirePasswordAfter}}checked{{end}}> Krev gavepassord også etter åpningsdato</label>
+<p class="help">Valgene er uavhengige og krever et gavepassord. Uten krav etter datoen vil mottakeren vises automatisk når tiden er inne.</p></fieldset>
+<label class="wide">Hemmelig melding <span class="optional">(valgfritt)</span><textarea name="message" rows="4" maxlength="4000">{{.Gift.Message}}</textarea></label>
+<div class="wide note-block"><button type="button" class="secondary" data-toggle-target="edit-note" aria-expanded="false">👁 Vis privat beskrivelse / notat</button><div id="edit-note" hidden><label>Privat beskrivelse / notat <span class="optional">(bare for deg)</span><textarea name="private_note" rows="4" maxlength="4000">{{.Gift.PrivateNote}}</textarea></label></div></div>
+<div class="actions wide"><button type="submit">💾 Lagre</button><button type="button" class="secondary" data-show-preview>👁 Forhåndsvisning av endringene</button><a class="button-link secondary" href="/admin">Avbryt</a></div>
+</form></section></main>
+<dialog id="gift-preview"><div class="preview-dialog"><button class="secondary close" type="button" data-close-preview>✕ Lukk</button><p class="muted">Forhåndsvisning · etter åpning</p><div class="big">🎁</div><h2>God jul, <span data-preview-recipient></span>! 🎄</h2><p class="message" data-preview-message></p><p>Fra <span data-preview-sender></span> ❤️</p><p class="help">Det private notatet vises aldri på gavesiden.</p></div></dialog>
+</body></html>

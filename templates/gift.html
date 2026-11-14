@@ -1,1 +1,15 @@
-<!doctype html><html lang="no"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>En julegave til {{.Gift.Recipient}}</title><link rel="stylesheet" href="/static/style.css"><main class="small center"><div class="big">{{if .Unlocked}}🎁{{else}}🔒{{end}}</div><h1>God jul, {{.Gift.Recipient}}!</h1>{{if .Unlocked}}<h2>Gaven er åpnet!</h2><p class="message">{{.Gift.Message}}</p><p>Fra {{.Gift.Sender}} ❤️</p>{{else}}<h2>Ikke kikk ennå! 👀</h2><p>Denne gaven kan åpnes {{.Gift.OpensAt.Format "02.01.2006 kl. 15:04"}} (UTC).</p><p>Kom tilbake når tiden er inne.</p><button onclick="location.reload()">Sjekk igjen</button>{{end}}</main></html>
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{if .Unlocked}}En julegave til {{.Gift.Recipient}}{{else}}En hemmelig julegave{{end}}</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="small center">
+{{if .Preview}}<p class="preview-banner">👁 Forhåndsvisning – bare synlig for deg som eier etiketten</p>{{end}}
+<div class="big">{{if .Unlocked}}🎁{{else if .ShowPassword}}🔐{{else}}🔒{{end}}</div>
+{{if .Unlocked}}
+<h1>God jul, {{.Gift.Recipient}}! 🎄</h1>{{if .Gift.Message}}<p class="message">{{.Gift.Message}}</p>{{end}}<p>Fra {{.Gift.Sender}} ❤️</p>
+{{else if .ShowPassword}}
+<h1>Hvem er gaven til? 🤫</h1><h2>Skriv inn gavepassordet</h2>{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+<form method="post" action="/gift/{{.Gift.ID}}/unlock" class="password-form"><label>Passord<input type="password" name="password" autocomplete="off" required autofocus></label><button>Åpne gave 🎁</button></form>
+{{else}}
+<h1>Hvem er gaven til? 🤫</h1><h2>Ikke kikk ennå! 👀</h2><p>Du får vite hvem gaven er til når den kan åpnes.</p>{{if .Gift.HasOpensAt}}<p>Gaven kan åpnes {{.Gift.OpensAtLabel}}.</p>{{else}}<p>Gaven er ikke klar til åpning ennå.</p>{{end}}
+{{if not .Preview}}<form method="get"><button class="secondary">Sjekk igjen</button></form>{{end}}
+{{end}}
+{{if .Preview}}<p><a href="/admin">Tilbake til mine etiketter</a>{{if not .PreviewLocked}} · <a href="/admin/gifts/{{.Gift.ID}}/preview?mode=locked">Se låst visning</a>{{end}}</p>{{end}}
+</main></body></html>

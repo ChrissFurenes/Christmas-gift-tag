@@ -1,0 +1,8 @@
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bekreft sletting av bruker</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="small"><h1>⚠️ Slett bruker</h1><section><h2>{{.DeleteUsername}}</h2>
+{{if gt .DeleteCount 0}}<p class="warning">Denne brukeren har <strong>{{.DeleteCount}} eksisterende etiketter</strong>. Hvis du sletter kontoen, blir også alle etikettene og QR-lenkene deres slettet permanent.</p>{{else}}<p>Denne brukeren har ingen etiketter.</p>{{end}}
+<form method="post" action="/admin/users/{{.Gift.ID}}/delete" class="stack"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="expected_count" value="{{.DeleteCount}}">
+<label>Skriv brukernavnet <strong>{{.DeleteUsername}}</strong> for å bekrefte:<input name="confirm_username" required autocomplete="off"></label>
+<label class="checkbox-label"><input type="checkbox" name="confirm_delete" value="on" required> Jeg forstår at brukeren og {{.DeleteCount}} etiketter slettes permanent.</label>
+<div class="actions"><button class="danger">Slett bruker og etiketter</button><a class="button-link secondary" href="/admin/users">Avbryt</a></div>
+</form></section></main></body></html>

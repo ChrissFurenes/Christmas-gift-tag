@@ -1,1 +1,8 @@
-<!doctype html><html lang="no"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Logg inn – Julegaver</title><link rel="stylesheet" href="/static/style.css"><main class="small"><h1>🎄 Julegaver</h1><h2>Administrator</h2>{{if .Error}}<p class="error">{{.Error}}</p>{{end}}<form method="post" action="/admin/login"><label>Passord<input type="password" name="password" required autofocus></label><button>Logg inn</button></form></main></html>
+<!doctype html><html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Logg inn – Christmas Gift Tag</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="small"><h1>🎄 Christmas Gift Tag</h1><section><h2>Logg inn</h2>{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+<form method="post" action="/login" class="stack"><label>Brukernavn<input type="text" name="username" autocomplete="username" required autofocus></label><label>Passord<input type="password" name="password" autocomplete="current-password" required></label><button>Logg inn</button></form>
+{{if .LocalSignupEnabled}}<p><a class="button-link secondary" href="/register">Opprett lokal brukerkonto</a></p>{{end}}
+{{if .GitHubEnabled}}<p><a class="button-link secondary" href="/auth/github">Logg inn eller opprett bruker med GitHub</a></p>{{end}}
+{{if .OIDCEnabled}}<p><a class="button-link secondary" href="/auth/oidc">Logg inn eller opprett bruker med OpenID Connect</a></p>{{end}}
+{{if .LDAPEnabled}}<p class="help">LDAP-brukere kan logge inn med katalogbrukernavn og passord i feltene over.</p>{{end}}
+</section></main></body></html>
