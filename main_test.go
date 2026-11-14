@@ -553,3 +553,121 @@ func TestMigrationFromV42AddsEncryptedPasswordAndDisplayName(t *testing.T) {
 		t.Fatal("migration not idempotent", err)
 	}
 }
+
+func TestPrintingOnlyOwnGifts(t *testing.T) {
+	a := testApp(t)
+	insertUser(t, a, "user-2", "second")
+	mustExec(t, a, `INSERT INTO gifts(id,owner_id,recipient,sender,message,opens_at,private_note) VALUES('gift-admin','bootstrap-admin','Eierens mottaker','Admin','','','EIERNOTAT')`)
+	mustExec(t, a, `INSERT INTO gifts(id,owner_id,recipient,sender,message,opens_at,private_note) VALUES('gift-other','user-2','Annen mottaker','En annen avsender','HEMMELIG MELDING','','SKJULT NOTAT')`)
+	admin := sessionFor(t, a, "bootstrap-admin")
+	other := sessionFor(t, a, "user-2")
+	path := "/admin/gifts/print"
+
+	// Admin is not an omnipotent printer. Even a forged form cannot list a gift
+	// owned by another account.
+	for _, session := range []*http.Cookie{admin, other} {
+		forbiddenID := "gift-other"
+		if session == other {
+			forbiddenID = "gift-admin"
+		}
+		w := perform(a, "POST", path, userForm(a, session, url.Values{"gift_ids": {forbiddenID}}), session)
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("foreign gift print returned %d; expected 404", w.Code)
+		}
+		if strings.Contains(w.Body.String(), "mottaker") || strings.Contains(w.Body.String(), "NOTAT") {
+			t.Fatalf("foreign print leaked gift contents: %s", w.Body.String())
+		}
+	}
+
+	// A mixed forged selection must fail entirely, not print a partial list.
+	mixed := perform(a, "POST", path, userForm(a, admin, url.Values{"gift_ids": {"gift-admin", "gift-other"}}), admin)
+	if mixed.Code != 404 || strings.Contains(mixed.Body.String(), "Eierens mottaker") {
+		t.Fatalf("mixed ownership leaked a gift: %d %s", mixed.Code, mixed.Body.String())
+	}
+
+	own := perform(a, "POST", path, userForm(a, other, url.Values{"gift_ids": {"gift-other", "gift-other"}}), other)
+	body := own.Body.String()
+	if own.Code != 200 || !strings.Contains(body, "Annen mottaker") || !strings.Contains(body, "En annen avsender") {
+		t.Fatalf("own print failed: %d %s", own.Code, body)
+	}
+	if strings.Count(body, `class="print-label"`) != 1 {
+		t.Fatal("duplicate IDs must not produce duplicate labels")
+	}
+	if strings.Contains(body, "Eierens mottaker") || strings.Contains(body, "SKJULT NOTAT") || strings.Contains(body, "HEMMELIG MELDING") {
+		t.Fatal("print includes private note, secret message, or another user's gift")
+	}
+	if strings.Contains(body, `class="label-names"`) {
+		t.Fatal("names should not appear on the default QR label")
+	}
+	if own.Header().Get("Cache-Control") != "no-store, private" {
+		t.Fatal("private print response should be non-cacheable")
+	}
+
+	withDetails := perform(a, "POST", path, userForm(a, other, url.Values{
+		"gift_ids": {"gift-other"}, "show_names": {"on"}, "show_notes": {"on"},
+	}), other)
+	if withDetails.Code != 200 || !strings.Contains(withDetails.Body.String(), `class="label-names"`) || !strings.Contains(withDetails.Body.String(), "SKJULT NOTAT") {
+		t.Fatalf("explicitly chosen print options failed: %d", withDetails.Code)
+	}
+}
+
+func TestPrintSecurityAndUI(t *testing.T) {
+	a := testApp(t)
+	mustExec(t, a, `INSERT INTO gifts(id,owner_id,recipient,sender,message,opens_at) VALUES('own','bootstrap-admin','Alice','Bob','','')`)
+	admin := sessionFor(t, a, "bootstrap-admin")
+	page := perform(a, "GET", "/admin", nil, admin)
+	for _, required := range []string{`id="print-selected-form"`, `name="gift_ids"`, `data-select-visible`, `data-print-submit`, `name="show_names"`, `name="show_notes"`} {
+		if !strings.Contains(page.Body.String(), required) {
+			t.Fatalf("dashboard missing print control %s", required)
+		}
+	}
+	if got := perform(a, "GET", "/admin/gifts/print", nil, admin); got.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("printing should require POST: %d", got.Code)
+	}
+	if got := perform(a, "POST", "/admin/gifts/print", url.Values{"gift_ids": {"own"}}, nil); got.Code != http.StatusSeeOther {
+		t.Fatalf("anonymous printing allowed: %d", got.Code)
+	}
+	if got := perform(a, "POST", "/admin/gifts/print", url.Values{"gift_ids": {"own"}}, admin); got.Code != http.StatusForbidden {
+		t.Fatalf("missing CSRF accepted: %d", got.Code)
+	}
+	if got := perform(a, "POST", "/admin/gifts/print", userForm(a, admin, url.Values{}), admin); got.Code != http.StatusBadRequest {
+		t.Fatalf("empty selection accepted: %d", got.Code)
+	}
+	many := make([]string, maxPrintGifts+1)
+	for i := range many {
+		many[i] = "own"
+	}
+	if got := perform(a, "POST", "/admin/gifts/print", userForm(a, admin, url.Values{"gift_ids": many}), admin); got.Code != http.StatusBadRequest {
+		t.Fatalf("oversized selection accepted: %d", got.Code)
+	}
+}
+
+func TestQRCodeImageRestrictedToOwner(t *testing.T) {
+	a := testApp(t)
+	insertUser(t, a, "other", "other")
+	mustExec(t, a, `INSERT INTO gifts(id,owner_id,recipient,sender,message,opens_at) VALUES('gift-x','other','Annas gave','Ola','','')`)
+	admin := sessionFor(t, a, "bootstrap-admin")
+	other := sessionFor(t, a, "other")
+	for _, tc := range []struct {
+		name   string
+		cookie *http.Cookie
+		status int
+	}{
+		{"owner", other, http.StatusOK},
+		{"admin-not-owner", admin, http.StatusNotFound},
+		{"anonymous", nil, http.StatusSeeOther},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := perform(a, "GET", "/admin/gifts/gift-x/qr.png", nil, tc.cookie)
+			if w.Code != tc.status {
+				t.Fatalf("QR request returned %d, want %d", w.Code, tc.status)
+			}
+			if tc.status == 200 && (w.Header().Get("Content-Type") != "image/png" || w.Header().Get("Cache-Control") != "no-store, private") {
+				t.Fatalf("QR response had wrong headers: %v", w.Header())
+			}
+		})
+	}
+	if w := perform(a, "GET", "/gift/gift-x/qr.png", nil, nil); w.Code == 200 {
+		t.Fatal("public QR endpoint must not expose printable QR images")
+	}
+}

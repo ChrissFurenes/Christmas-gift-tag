@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Skriv ut {{.Count}} QR-etiketter – Christmas Gift Tag</title>
+  <link rel="stylesheet" href="/static/print.css">
+  <script defer src="/static/print.js"></script>
+</head>
+<body>
+<div class="print-controls">
+  <div><strong>🎄 {{.Count}} valgte etiketter</strong><span>Først kommer QR-etikettene, deretter oversiktsarket med mottaker og avsender.</span></div>
+  <button type="button" data-print-now>🖨️ Skriv ut</button>
+  <button type="button" class="secondary" data-close-print>Lukk vinduet</button>
+</div>
+<main>
+{{range $page := .Pages}}
+<section class="print-sheet label-sheet">
+  <header><h1>🎄 Juleetiketter</h1><p>Skann QR-koden på gaven</p></header>
+  <div class="label-grid">
+    {{range $page}}
+    <article class="print-label">
+      <img src="/admin/gifts/{{.Gift.ID}}/qr.png" alt="QR-kode til gave nr. {{.Number}}">
+      <div class="label-details">
+        <div class="label-heading">🎁 God jul!</div>
+        <div class="reference">Nr. {{.Number}} · Ref. {{.Code}}</div>
+        <p class="scan-hint">Skann for å åpne gaven</p>
+        {{if $.ShowNames}}<div class="label-names"><div><strong>Til:</strong> {{.Gift.Recipient}}</div><div><strong>Fra:</strong> {{.Gift.Sender}}</div></div>{{end}}
+      </div>
+    </article>
+    {{end}}
+  </div>
+</section>
+{{end}}
+<section class="print-sheet overview-sheet">
+  <header><h1>🎄 Oversikt over QR-etiketter</h1><p>Kun for deg som pakker inn gavene – legg dette arket til side.</p></header>
+  <p class="intro">Finn nummeret og referansen under QR-koden, og bruk listen til å sette riktig etikett på riktig gave.</p>
+  <table>
+    <thead><tr><th>Nr.</th><th>Referanse</th><th>Mottaker</th><th>Avsender</th>{{if .ShowNotes}}<th>Privat notat</th>{{end}}</tr></thead>
+    <tbody>{{range .Items}}<tr><td>{{.Number}}</td><td class="mono">{{.Code}}</td><td>{{.Gift.Recipient}}</td><td>{{.Gift.Sender}}</td>{{if $.ShowNotes}}<td class="notes">{{.Gift.PrivateNote}}</td>{{end}}</tr>{{end}}</tbody>
+  </table>
+  <p class="footer">Gavepassord og hemmelige meldinger er ikke tatt med på utskriften.</p>
+</section>
+</main>
+</body>
+</html>

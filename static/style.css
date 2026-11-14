@@ -9,3 +9,12 @@ button,.button-link{background:#c54545;color:white;padding:11px 17px;border:0;bo
 @media(max-width:660px){form.create{grid-template-columns:1fr}.giftrow{flex-direction:column}.userrow{flex-direction:column}.useractions{justify-content:flex-start}main{margin:1vh auto}}
 
 .date-input-block{display:flex;flex-direction:column;gap:10px}.date-input-block .inline-buttons{display:flex;flex-wrap:wrap;gap:8px}.inline-buttons button{padding:8px 12px}.search-box{margin:10px 0 20px;display:block;max-width:510px}.search-box input{width:100%}.reveal-block{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.password-secret{background:#0d241c;padding:8px 12px;border:1px solid #668576;border-radius:8px;overflow-wrap:anywhere;white-space:pre-wrap;font-family:ui-monospace,monospace}.date-options .help{margin-top:4px}
+
+/* QR selection and private printing controls */
+.print-toolbar{border:1px solid #668576;background:#214737;border-radius:12px;padding:16px;margin:16px 0 22px;display:flex;flex-direction:column;gap:12px}
+.print-toolbar-title h3{margin:0 0 4px}.print-toolbar-title p{margin:0}
+.print-toolbar-actions{display:flex;gap:10px;flex-wrap:wrap}
+.print-form{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.print-form .help{margin:0}.print-select{display:flex;align-items:center;gap:6px;align-self:flex-start;font-size:.83rem;background:#2c5645;border:1px solid #668576;border-radius:9px;padding:10px 7px;cursor:pointer;flex:none}
+.print-select input{margin:0}.print-form button:disabled{cursor:not-allowed;opacity:.5}
+@media(max-width:660px){.print-select{align-self:flex-start}}

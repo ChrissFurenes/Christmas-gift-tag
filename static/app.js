@@ -98,3 +98,32 @@ document.querySelectorAll('[data-reveal-gift-password]').forEach(button => {
     } finally { button.disabled = false; }
   });
 });
+
+
+// Only the current user's gift cards have selection boxes. The server still
+// validates ownership of every selected ID when the print form is submitted.
+const printForm = document.getElementById('print-selected-form');
+if (printForm) {
+  const selected = Array.from(document.querySelectorAll('[data-print-select]'));
+  const submit = printForm.querySelector('[data-print-submit]');
+  const counter = printForm.querySelector('[data-selected-count]');
+  const update = () => {
+    const count = selected.filter(input => input.checked).length;
+    counter.textContent = String(count);
+    submit.disabled = count === 0;
+  };
+  selected.forEach(input => input.addEventListener('change', update));
+  document.querySelector('[data-select-visible]')?.addEventListener('click', () => {
+    selected.forEach(input => { if (!input.closest('[data-label-row]')?.hidden) input.checked = true; });
+    update();
+  });
+  document.querySelector('[data-clear-selection]')?.addEventListener('click', () => {
+    selected.forEach(input => { input.checked = false; });
+    update();
+  });
+  // Opening a new tab submits a normal CSRF-protected form; no JS data fetch.
+  printForm.addEventListener('submit', event => {
+    if (!selected.some(input => input.checked)) event.preventDefault();
+  });
+  update();
+}

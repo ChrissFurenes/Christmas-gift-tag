@@ -22,14 +22,25 @@
 <section><h2>Mine etiketter (<span data-label-count>{{len .Gifts}}</span>)</h2>
 <label class="search-box">🔎 Søk i etiketter<input type="search" data-label-search placeholder="Søk på mottaker, avsender eller privat notat" autocomplete="off"></label>
 <p class="help" data-label-no-match hidden>Ingen etiketter passer søket.</p>
+<div class="print-toolbar">
+  <div class="print-toolbar-title"><h3>🖨️ Skriv ut QR-etiketter</h3><p class="help">Velg etiketter fra listen nedenfor. Bare dine egne etiketter kan skrives ut.</p></div>
+  <div class="print-toolbar-actions"><button type="button" class="secondary" data-select-visible>Velg alle viste</button><button type="button" class="secondary" data-clear-selection>Fjern valg</button></div>
+  <form id="print-selected-form" action="/admin/gifts/print" method="post" target="_blank" class="print-form">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <label class="checkbox-label"><input type="checkbox" name="show_names" value="on"> Vis mottaker og avsender på selve QR-etiketten</label>
+    <label class="checkbox-label"><input type="checkbox" name="show_notes" value="on"> Ta med private notater på oversiktsarket</label>
+    <p class="help">Standard: anonyme QR-etiketter med referansenummer + eget oversiktsark som viser hvem hver etikett tilhører. Informasjonen skrives kun ut for deg.</p>
+    <button type="submit" data-print-submit disabled>🖨️ Skriv ut valgte (<span data-selected-count>0</span>)</button>
+  </form>
+</div>
 {{range .Gifts}}
-<article class="giftrow" data-label-row data-search="{{.Recipient}} {{.Sender}} {{.PrivateNote}} {{.ID}}"><img src="/gift/{{.ID}}/qr.png" alt="QR-kode for etikett"><div class="giftinfo">
+<article class="giftrow" data-label-row data-search="{{.Recipient}} {{.Sender}} {{.PrivateNote}} {{.ID}}"><label class="print-select"><input type="checkbox" name="gift_ids" value="{{.ID}}" form="print-selected-form" data-print-select aria-label="Velg etikett til {{.Recipient}} for utskrift"><span>Velg</span></label><img src="/admin/gifts/{{.ID}}/qr.png" alt="QR-kode for etikett"><div class="giftinfo">
 <h3>Til {{.Recipient}} · Fra {{.Sender}}</h3>
 {{if .PrivateNote}}<div class="note-block"><button type="button" class="secondary" data-toggle-target="note-{{.ID}}" aria-expanded="false">👁 Vis privat notat</button><p id="note-{{.ID}}" class="private-note" hidden>{{.PrivateNote}}</p></div>{{end}}
 <p class="muted">{{if .HasOpensAt}}Åpnes: {{.OpensAtLabel}}{{else}}Ingen åpningsdato{{end}} · {{if .HasPassword}}🔐 Gavepassord er satt{{else}}🔓 Intet gavepassord{{end}} · Besøk uten tilgang: {{.Peeks}}</p>
 {{if .HasPassword}}<div class="reveal-block"><button type="button" class="secondary" data-reveal-gift-password="{{.ID}}" aria-expanded="false">👁 Vis gavepassord</button><output class="password-secret" data-revealed-password="{{.ID}}" hidden></output></div>{{end}}
 {{if and .HasOpensAt .HasPassword}}<p class="muted">{{if .RequirePasswordAfter}}Passord etter tidspunkt: Ja{{else}}Passord etter tidspunkt: Nei{{end}} · {{if .AllowPasswordBefore}}Passord før tidspunkt: Ja{{else}}Passord før tidspunkt: Nei{{end}}</p>{{end}}
-<p><a href="/gift/{{.ID}}" target="_blank" rel="noopener">Offentlig gaveside</a> · <a href="/gift/{{.ID}}/qr.png" download="gave-{{.ID}}.png">Last ned QR-kode</a></p>
+<p><a href="/gift/{{.ID}}" target="_blank" rel="noopener">Offentlig gaveside</a> · <a href="/admin/gifts/{{.ID}}/qr.png" download="gave-{{.ID}}.png">Last ned QR-kode</a></p>
 <p class="muted">{{$.URL}}/gift/{{.ID}}</p>
 <div class="actions"><a class="button-link" href="/admin/gifts/{{.ID}}/preview" target="_blank" rel="noopener">👁 Forhåndsvisning</a><a class="button-link secondary" href="/admin/gifts/{{.ID}}/edit">✏️ Rediger</a>
 {{if .ForcedOpen}}<form method="post" action="/admin/gifts/{{.ID}}/lock"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="secondary">Fjern manuell åpning</button></form>{{else}}<form method="post" action="/admin/gifts/{{.ID}}/open"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button>Åpne manuelt</button></form>{{end}}

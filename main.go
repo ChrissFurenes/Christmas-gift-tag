@@ -225,6 +225,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /admin", a.dashboard)
 	mux.HandleFunc("GET /dashboard", a.dashboard)
 	mux.HandleFunc("POST /admin/gifts", a.createGift)
+	mux.HandleFunc("POST /admin/gifts/print", a.printSelectedGifts)
 	mux.HandleFunc("GET /admin/gifts/{id}/edit", a.editPage)
 	mux.HandleFunc("POST /admin/gifts/{id}/edit", a.editGift)
 	mux.HandleFunc("GET /admin/gifts/{id}/preview", a.previewGift)
@@ -242,7 +243,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /admin/settings", a.saveSettings)
 	mux.HandleFunc("GET /gift/{id}", a.showGift)
 	mux.HandleFunc("POST /gift/{id}/unlock", a.unlockGift)
-	mux.HandleFunc("GET /gift/{id}/qr.png", a.qr)
+	mux.HandleFunc("GET /admin/gifts/{id}/qr.png", a.qr)
 	mux.HandleFunc("GET /auth/github", a.githubStart)
 	mux.HandleFunc("GET /auth/github/callback", a.githubCallback)
 	mux.HandleFunc("GET /auth/oidc", a.oidcStart)
@@ -443,8 +444,12 @@ func (a *App) unlockGift(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/gift/"+url.PathEscape(g.ID), http.StatusSeeOther)
 }
 func (a *App) qr(w http.ResponseWriter, r *http.Request) {
+	u, _, ok := a.requireUser(w, r)
+	if !ok {
+		return
+	}
 	id := r.PathValue("id")
-	if _, err := a.getGift(id); err != nil {
+	if _, err := a.getOwnedGift(id, u.ID); err != nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -454,7 +459,7 @@ func (a *App) qr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "image/png")
-	w.Header().Set("Cache-Control", "public,max-age=3600")
+	w.Header().Set("Cache-Control", "no-store, private")
 	_, _ = w.Write(png)
 }
 

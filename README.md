@@ -1,6 +1,23 @@
-# Christmas Gift Tag – Go v4.3
+# Christmas Gift Tag – Go v4.4 (utskrift)
 
 Selvhostet webapp som lager QR-etiketter til julegaver, med private brukerkontoer og valgfri passord-/datolås. Hver etikett får sin egen lange tilfeldige URL. Til/fra og valgfri hemmelig melding er **skjult for den offentlige gavesiden frem til åpning**.
+
+
+## Nytt i v4.4 – velg og skriv ut QR-etiketter
+
+På **Mine etiketter** finner du nå avkrysningsbokser for hver etikett, og en utskriftsmeny over listen:
+
+1. Merk de etikettene du vil skrive ut (eller bruk **Velg alle viste**; fungerer også etter søk).
+2. Klikk **Skriv ut valgte**. Et nytt vindu åpnes med utskriftsvisning og nettleserens utskriftsdialog.
+3. Standardoppsettet er A4 med **seks QR-etiketter per ark**, hver merket med nummer og kort referanse.
+4. Etter QR-arkene får du et **eget oversiktsark** som viser referansen, mottaker og avsender, slik at du vet hvilken kode som hører til hvilken pakke.
+5. Hvis du ønsker **Til/Fra på selve QR-etiketten**, huk av for det før utskrift. Du kan også velge å vise private notater på oversiktsarket (av som standard).
+
+For enkel utskrift er antallet begrenset til **60 etiketter per utskriftsjobb**. Ingen gavepassord eller hemmelige meldinger er med i utskriften. Vær oppmerksom på at oversiktsarket inneholder private navn; oppbevar det separat fra gavene.
+
+**Eierbegrensning på serversiden:** Utskrift krever innlogging og CSRF-token. Hver valgte etikett kontrolleres i databasen med `owner_id` lik den innloggede brukeren. Hvis én ID ikke tilhører denne brukeren, avvises **hele** utskriften. **Administrator har ikke unntak** fra regelen. Også nedlasting av QR-bilder (`/admin/gifts/{id}/qr.png`) krever at man er eieren. Den gamle offentlige QR-bildeadressen er fjernet; **selve QR-lenken til `/gift/{id}` fortsetter å fungere** som før.
+
+**Oppdatering:** Behold `.env` og Docker-volumet. Erstatt prosjektfilene og kjør `docker compose up --build -d`. Ingen nye miljøvariabler eller migreringer kreves.
 
 ## Nytt i v4.3
 
